@@ -22,7 +22,7 @@ exports.readObservation = (file, context) => {
     .on('data', (row) => {
         //Log row data
         // console.log(row);
-        printDict();
+        printDict(row);
     })
     .on('end', () => {
         //Handle end od CSV
