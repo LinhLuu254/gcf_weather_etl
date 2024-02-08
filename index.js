@@ -1,16 +1,15 @@
 const {Storage} = require('@google-cloud/storage');
+const {BigQuery} = require('@google-cloud/bigquery');
+
+const weather_bq = new BigQuery();
+const datasetId = 'weather_etl';
+const tableId = 'weather_info';
 
 const csv = require('csv-parser');
 
-
 exports.readObservation = (file, context) => {
-    // console.log(`  Event: ${context.eventId}`);
-    // console.log(`  Event Type: ${context.eventType}`);
-    // console.log(`  Bucket: ${file.bucket}`);
-    // console.log(`  File: ${file.name}`);
-
+ 
     const gcs = new Storage();
-
     const dataFile = gcs.bucket(file.bucket).file(file.name);
 
     dataFile.createReadStream()
@@ -39,7 +38,12 @@ function transformData(row) {
         } else if (key === 'station') {
             value = '724380-93819'; 
         } else if (key === 'year' || key === 'month' || key === 'day' || key === 'hour' || key === 'winddirection' || key === 'sky') {
-            value = parseInt(value);
+            if (value != null){
+                value = parseInt(value);
+            }else {
+                value = null;
+            }
+           
         } else {
             const num = parseFloat(value);
             if (!isNaN(num)) {
@@ -54,13 +58,39 @@ function transformData(row) {
     for (let key in transformedRow){ 
         console.log(`${key}: ${transformedRow[key]}`);
     }
+
+    weatherInfo(transformedRow);
     
-    // printDict(transformedRow);
 }
 
-//Helper function
-// function printDict(row) {
-//     for (let key in row){ 
-//         console.log(`${key}: ${row[key]}`);
-//     }
-// };
+// Entry points
+const weatherInfo = (row) => {
+    const rowInfo = {
+        station: row.station,
+        year: row.year,
+        month: row.month,
+        hour: row.hour,
+        airtemp: row.airtemp,
+        dewpoint: row.dewpoint,
+        pressure: row.pressure,
+        winddirection: row.winddirection,
+        windspeed: row.windspeed,
+        sky: row.sky,
+        precip1hour: row.precip1hour,
+        precip6hour: row.precip6hour
+    };
+
+    writeToBq(rowInfo);
+};
+
+async function writeToBq(obj) {
+    try {
+        await weather_bq
+            .dataset(datasetId)
+            .table(tableId)
+            .insert(obj);
+        console.log('Insert:', obj);
+    } catch (error) {
+        console.error('Error in BigQuery insertion:', error);
+    }
+}
