@@ -32,14 +32,12 @@ exports.readObservation = (file, context) => {
 //Transform datd type and print out
 function transformData(row) {
     const transformedRow = {};
-    for (const key in row) {
+    for (let key in row) {
         let value = row[key];
-        if (value === '-9999') {
+        if (value === '-999.9'|| value === '-9999'|| value === '-9999.0') {
             value = null;
         } else if (key === 'station') {
-            if (value === 'Indianapolis Airport') {
-                value = '724380-93819';
-            } // Add more station mappings as needed
+            value = '724380-93819'; 
         } else if (key === 'year' || key === 'month' || key === 'day' || key === 'hour' || key === 'winddirection' || key === 'sky') {
             value = parseInt(value);
         } else {
@@ -52,12 +50,17 @@ function transformData(row) {
         }
         transformedRow[key] = value;
     }
-    printDict(transformedRow);
+
+    for (let key in transformedRow){ 
+        console.log(`${key}: ${transformedRow[key]}`);
+    }
+    
+    // printDict(transformedRow);
 }
 
 //Helper function
-function printDict(row) {
-    for (let key in row){ 
-        console.log(`${key}: ${row[key]}`);
-    }
-};
+// function printDict(row) {
+//     for (let key in row){ 
+//         console.log(`${key}: ${row[key]}`);
+//     }
+// };
